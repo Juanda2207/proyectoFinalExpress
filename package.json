@@ -1,0 +1,20 @@
+{
+  "name": "express-html-postgresql",
+  "version": "1.0.0",
+  "description": "proyecto final bases de datos 1, con postgresql, node, express y vue",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "author": "Juanda 2207 - Mateo Duque - Lina Duque - Jjat",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "cross-env": "^7.0.2",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.1",
+    "nodemon": "^2.0.6",
+    "pg": "^8.4.2"
+  }
+}
