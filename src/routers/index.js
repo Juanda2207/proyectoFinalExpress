@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const router = Router();
-const {login, getRegistry, getRegistryByID, createRegistry, getPatient, getPatientByID, createPatient, editPatient, deletePatient, getEmergencyContactByID, createEmergencyContact, deleteEmergencyContact, createPublicServer, createRoommates, getDoctorByID, createDoctor, getRoommates, getReport, createReport, getStock, doOrder, getOrder, editEmergencyContact, getReportByID, getDoctor} = require('../controllers/index.controller');
+const {login, getRegistry, getRegistryByID, createRegistry, getPatient, getPatientByDoctor, getPatientByID, createPatient, editPatient, deletePatient, getEmergencyContactByID, createEmergencyContact, deleteEmergencyContact, createPublicServer, createRoommates, getDoctorByID, createDoctor, getRoommates, getReport, createReport, getStock, doOrder, getOrder, editEmergencyContact, getReportByID, getDoctor} = require('../controllers/index.controller');
 
 
 router.post('/login', login)
@@ -12,6 +12,8 @@ router.get('/getRegistry/:document', getRegistryByID)
 router.post('/createRegistry', createRegistry)
 
 router.get('/getPatient', getPatient)
+
+router.get('/getPatientByDoctor/:doctor', getPatientByDoctor)
 
 router.get('/getPatient/:document', getPatientByID)
 
