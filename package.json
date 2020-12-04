@@ -4,7 +4,7 @@
   "description": "proyecto final bases de datos 1, con postgresql, node, express y vue",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "npx nodemon src/index.js"
   },
   "author": "Juanda 2207 - Mateo Duque - Lina Duque - Jjat",
   "license": "ISC",
@@ -13,8 +13,12 @@
     "cross-env": "^7.0.2",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "express-session": "^1.17.1",
     "node-fetch": "^2.6.1",
     "nodemon": "^2.0.6",
+    "passport": "^0.4.1",
+    "passport-facebook": "^3.0.0",
+    "passport-twitter": "^1.0.4",
     "pg": "^8.4.2"
   }
 }

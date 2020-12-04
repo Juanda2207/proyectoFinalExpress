@@ -1,7 +1,7 @@
 const { Router } = require('express');
+const passport = require('passport');
 const router = Router();
-const {login, getRegistry, getRegistryByID, createRegistry, getPatient, getPatientByDoctor, getPatientByID, createPatient, editPatient, deletePatient, getEmergencyContactByID, createEmergencyContact, deleteEmergencyContact, createPublicServer, createRoommates, getDoctorByID, createDoctor, getRoommates, getReport, createReport, getStock, doOrder, getOrder, editEmergencyContact, getReportByID, getDoctor} = require('../controllers/index.controller');
-
+const {login, getRegistry, getRegistryByID, createRegistry, getPatient, getPatientByDoctor, getPatientByID, createPatient, editPatient, deletePatient, getEmergencyContactByID, createEmergencyContact, deleteEmergencyContact, createPublicServer, createRoommates, getDoctorByID, createDoctor, getRoommates, getReport, createReport, getStock, getStockByLab, getStockByName, doOrder, getOrder, editEmergencyContact, getReportByID, getDoctor, deleteRommates} = require('../controllers/index.controller');
 
 router.post('/login', login)
 
@@ -33,19 +33,25 @@ router.put('/editEmergencyContact', editEmergencyContact)
 
 router.post('/createPublicServer', createPublicServer)
 
-router.get('/getRoommates', getRoommates)
+router.get('/getRoommates/:document', getRoommates)
 
 router.post('/createRoommates', createRoommates)
 
+router.delete('/deleteRommates', deleteRommates)
+
 router.get('/getReport', getReport)
 
-router.get('7getReport/:id', getReportByID)
+router.get('/getReport/:id', getReportByID)
 
 router.post('/createReport', createReport)
 
-router.get('/getStock/:lab_name', getStock)
+router.get('/getStock', getStock)
 
-router.put('/doOrder', doOrder)
+router.get('/getStock/:lab', getStockByLab)
+
+router.get('getStockByName', getStockByName)
+
+router.post('/doOrder', doOrder)
 
 router.get('/getOrder', getOrder)
 

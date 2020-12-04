@@ -10,13 +10,18 @@ const pool= new Pool({
     password: 'c25aa39f8b9cec65ed0bf0763079ef86f7cf64554e5c6f1b0b1f7cee602d1a5a',
     database: 'demsc78c77ntbr', 
     port: '5432'
+    // host: 'localhost',
+    // user: 'postgres',
+    // password: 'petronia2207',
+    // database: 'postgres', 
+    // port: '5432'
 })
 
 const getRegistry = async(req, res, next)=>{
 
     const response = await pool.query(`SELECT pt.name1 as patient_name1, pt.name2 as patient_name2, pt.lastname1 as patient_lastname1, pt.lastname2 as patient_lastname2,
                                        reg.patient_document, dt.name1 as doctor_name1, dt.name2 as doctor_name2, dt.lastname1 as doctor_lastname1, dt.lastname2 as doctor_lastname2,
-                                       reg.doctor_document, reg.register_day, reg.register_month, reg.register_year, reg.register_hour, ep.patient_weight, ep.patient_temperature, ep.blood_pressure, ep.observations, rm.medicine_name, rd.dose
+                                       reg.doctor_document, reg.register_date, reg.register_hour, ep.patient_weight, ep.patient_temperature, ep.blood_pressure, ep.observations, rm.medicine_name, rd.dose
                                        FROM paciente pt, registro reg, doctor dt, estado_paciente ep, registro_medicamento rm, registro_dosis_medicamento rd
                                        WHERE pt.patient_document = reg.patient_document
                                        AND dt.doctor_document = reg.doctor_document
@@ -32,7 +37,7 @@ const getRegistryByID = async(req, res, next)=>{
 
     const response = await pool.query(`SELECT pt.name1 as patient_name1, pt.name2 as patient_name2, pt.lastname1 as patient_lastname1, pt.lastname2 as patient_lastname2,
                                         reg.patient_document, dt.name1 as doctor_name1, dt.name2 as doctor_name2, dt.lastname1 as doctor_lastname1, dt.lastname2 as doctor_lastname2,
-                                        reg.doctor_document, reg.register_day, reg.register_month, reg.register_year, reg.register_hour, ep.patient_weight, ep.patient_temperature, ep.blood_pressure, ep.observations, rm.medicine_name, rd.dose
+                                        reg.doctor_document, reg.register_date, reg.register_hour, ep.patient_weight, ep.patient_temperature, ep.blood_pressure, ep.observations, rm.medicine_name, rd.dose
                                         FROM paciente pt, registro reg, doctor dt, estado_paciente ep, registro_medicamento rm, registro_dosis_medicamento rd
                                         WHERE pt.patient_document = '${patient_document}'
                                         AND reg.patient_document = '${patient_document}'
@@ -49,7 +54,7 @@ const createRegistry = async(req, res, next)=>{
 
     const { patient_document, doctor_document, patient_weight, patient_temperature, blood_pressure, observations, medicine_name, dose } = req.body;
 
-    const doctorExist = await pool.query(`SELECT * FROM doctor WHERE doctor_document='${String(doctor_document)}'`);
+    const doctorExist = await pool.query(`SELECT * FROM doctor WHERE doctor_document='${doctor_document}'`);
     const patientExist = await pool.query(`SELECT * FROM paciente WHERE patient_document='${patient_document}'`);
     var date = new Date();
     if(doctorExist.rowCount==0){
@@ -58,14 +63,7 @@ const createRegistry = async(req, res, next)=>{
         if(patientExist.rowCount==0){
             res.send('No se puede hacer un registro a un paciente no existente');
         }else{
-            var horas= (date.getHours()-5);
-            var minutos= date.getMinutes();
-            var segundos= date.getSeconds();
-            if(horas>12){
-                horas= horas-12;
-            }
-            var register_hour = horas + ':' + minutos + ':' + segundos;
-            await pool.query(`INSERT INTO registro (patient_document, doctor_document, register_day, register_month, register_year, register_hour) VALUES ($1, $2, $3, $4, $5, $6)`, [patient_document, doctor_document, (date.getDate()), (date.getMonth()+1), date.getFullYear(), register_hour]);
+            await pool.query(`INSERT INTO registro (patient_document, doctor_document, register_date, register_hour) VALUES ($1, $2, CURRENT_DATE, LOCALTIME(0))`, [patient_document, doctor_document]);
             await pool.query(`INSERT INTO estado_paciente (patient_weight, patient_temperature, blood_pressure, observations) VALUES ($1, $2, $3, $4)`, [patient_weight, patient_temperature, blood_pressure, observations]);
             
             const doseExist = await pool.query(`SELECT * FROM registro_dosis_medicamento WHERE dose='${dose}'`);
@@ -136,20 +134,30 @@ const getPatientByDoctor = async(req, res, next)=>{
 
     const doctor_document = req.params.doctor;
 
-    const response = await pool.query (`SELECT DISTINCT pt.type_of_document, pt.patient_document, pt.name1 AS patient_name1, pt.name2 as patient_name2, pt.lastname1 as patient_lastname1, pt.lastname2 as patient_lastname2, pt.people_in_the_house as patient_roommates, pt.age as patient_age,
-                                            rp.register_date, rp.register_hour, sp.name1 as public_worker_name1, sp.name2 as public_worker_name2, sp.lastname1 as public_worker_lastname, sp.lastname2 as public_worker_lastname2,
-                                            up.patient_address, up.neighborhood, geo.coordinates, ct.possible_infection_city,
-                                            dt.name1 as doctor_name1, dt.name2 as doctor_name2, dt.lastname1 as doctor_lastname1, dt.lastname2 as doctor_lastname2 
-                                            FROM paciente pt, registro_paciente rp, servidor_publico sp, ubicacion_paciente up, geolocalizacion geo, ciudad ct, doctor dt, doctor_asignado da
-                                            WHERE da.doctor_document='${doctor_document}'
-                                            AND rp.patient_document = pt.patient_document
-                                            AND up.patient_document = pt.patient_document 
-                                            AND geo.location_id = up.location_id
-                                            AND ct.city_id = up.city_id
-                                            AND dt.doctor_document = da.doctor_document 
-                                            AND da.patient_document = pt.patient_document
-                                            AND sp.public_worker_ID = rp.public_worker_ID`);
-    res.json(response.rows);
+
+    const doctorExist = await pool.query(`SELECT * FROM doctor WHERE doctor_document='${String(doctor_document)}'`);
+
+    if(doctorExist.rowCount==0){
+        //res.send('El paciente no existe');
+
+        res.status(404).json('El doctor no existe');
+    }else{
+        const response = await pool.query (`SELECT DISTINCT pt.type_of_document, pt.patient_document, pt.name1 AS patient_name1, pt.name2 as patient_name2, pt.lastname1 as patient_lastname1, pt.lastname2 as patient_lastname2, pt.people_in_the_house as patient_roommates, pt.age as patient_age,
+        rp.register_date, rp.register_hour, sp.name1 as public_worker_name1, sp.name2 as public_worker_name2, sp.lastname1 as public_worker_lastname, sp.lastname2 as public_worker_lastname2,
+        up.patient_address, up.neighborhood, geo.coordinates, ct.possible_infection_city,
+        dt.name1 as doctor_name1, dt.name2 as doctor_name2, dt.lastname1 as doctor_lastname1, dt.lastname2 as doctor_lastname2 
+        FROM paciente pt, registro_paciente rp, servidor_publico sp, ubicacion_paciente up, geolocalizacion geo, ciudad ct, doctor dt, doctor_asignado da
+        WHERE da.doctor_document='${doctor_document}'
+        AND rp.patient_document = pt.patient_document
+        AND up.patient_document = pt.patient_document 
+        AND geo.location_id = up.location_id
+        AND ct.city_id = up.city_id
+        AND dt.doctor_document = da.doctor_document 
+        AND da.patient_document = pt.patient_document
+        AND sp.public_worker_ID = rp.public_worker_ID`);
+        res.json(response.rows);
+    }
+    
 }
 
 const createPatient = async(req, res, next)=>{
@@ -171,16 +179,8 @@ const createPatient = async(req, res, next)=>{
             if(doctorExist.rowCount==0){
                 res.send('No existe el doctor asignado, paciente no creado');
             }else{
-                var register_date = (date.getUTCDate()) + '-' + (date.getUTCMonth()+1) + '-' + date.getUTCFullYear();
-                var horas= (date.getHours()-5);
-                var minutos= date.getMinutes();
-                var segundos= date.getSeconds();
-                if(horas>12){
-                    horas= horas-12;
-                }
-                var register_hour = horas + ':' + minutos + ':' + segundos;
                 await pool.query('INSERT INTO paciente(type_of_document, patient_document, name1, name2, lastname1, lastname2, age, people_in_the_house) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [type_of_document, patient_document, name1, name2, lastname1, lastname2, age, people_in_the_house]);
-                await pool.query('INSERT INTO registro_paciente(patient_document, register_date, register_hour, public_worker_ID) VALUES ($1, $2, $3, $4)', [patient_document, register_date, register_hour, public_worker_ID]);
+                await pool.query('INSERT INTO registro_paciente(patient_document, register_date, register_hour, public_worker_ID) VALUES ($1, CURRENT_DATE, LOCALTIME(0), $2)', [patient_document, public_worker_ID]);
                 
                 var location_id;
                 var city_id;
@@ -289,16 +289,15 @@ const deletePatient = async(req, res, next)=>{
 
 const getRoommates = async(req, res, next)=>{
 
-    const patient_document = req.body.patient_document;
+    const document = req.params.document;
 
-    const patientExist = await pool.query(`SELECT * FROM paciente WHERE patient_document='${patient_document}'`);
+    const patientExist = await pool.query(`SELECT * FROM paciente WHERE patient_document='${document}'`);
 
     if(patientExist.rowCount==0){
         res.send('El paciente referido no existe');
     }else{
-
         const response = await pool.query(`SELECT * FROM personas_con_las_que_vive
-                                        WHERE patient_document='${patient_document}'`);
+                                            WHERE patient_document='${document}'`);
         res.json(response.rows);
     }
 }
@@ -315,6 +314,20 @@ const createRoommates = async(req, res, next)=>{
     }
 }
 
+const deleteRommates = async(req, res, next)=>{
+ 
+    const contact_document = req.body;
+
+    const contactExist = await pool.query(`SELECT contact_document FROM personas_con_las_que_vive WHERE contact_document='${contact_document}'`)
+
+    if(contactExist.rowCount==0){
+        res.send('El contacto no existe');
+    }else{
+        await pool.query(`DELETE FROM personas_con_las_que_vive WHERE contact_document='${contact_document}'`);
+        res.send('Contacto borrado');
+    }
+}
+
 const getDoctor = async(req, res, next)=>{
 
     const response = await pool.query(`SELECT dc.type_of_document, dc.doctor_document, dc.name1 as doctor_name1, dc.name2 as doctor_name2, dc.lastname1 as doctor_lastname1, dc.lastname2 as doctor_lastname2,
@@ -328,6 +341,16 @@ const getDoctor = async(req, res, next)=>{
                                         AND ud.university_ID = dc.university_ID`)
     res.json(response.rows);
 }
+
+//Editar doctor
+const editDoctor = async(req, res, next)=>{
+
+    const { doctor_document, name1, name2, lastname1, lastname2 } = req.body
+
+
+
+}
+
 
 const getDoctorByID = async(req, res, next)=>{
 
@@ -394,17 +417,9 @@ const createDoctor = async(req, res, next)=>{
         res.send('Servidor público no encontrado');
     }else{
         if(alreadyDoctor.rowCount==0){
-            var register_date = (date.getUTCDate()) + '-' + (date.getMonth())+1 + '-' + date.getUTCFullYear();
-            var horas= (date.getHours()-5);
-            var minutos= date.getMinutes();
-            var segundos= date.getSeconds();
-            if(horas>12){
-                horas= horas-12;
-            }
-            var register_hour = horas + ':' + minutos + ':' + segundos;
             await pool.query('INSERT INTO doctor(doctor_document, type_of_document, name1, name2, lastname1, lastname2, university_id, entity_id, login_password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)', [doctor_document, type_of_document, name1, name2, lastname1, lastname2, univ, enti, login_password]);
             await pool.query('INSERT INTO vivienda_doctor(doctor_document, doctor_address, neighborhood) VALUES ($1, $2, $3)', [doctor_document, doctor_address, neighborhood]);
-            await pool.query('INSERT INTO registro_doctor(doctor_document, public_worker_ID, register_date, register_hour) VALUES ($1, $2, $3, $4)', [doctor_document, public_worker_ID, register_date, register_hour]);
+            await pool.query('INSERT INTO registro_doctor(doctor_document, public_worker_ID, register_date, register_hour) VALUES ($1, $2, CURRENT_DATE, LOCALTIME(0))', [doctor_document, public_worker_ID]);
             res.send('Doctor creado');
             
         }else{
@@ -444,7 +459,7 @@ const getEmergencyContactByID = async(req, res, next)=>{
 
     const response= await pool.query(`SELECT DISTINCT cde.patient_document AS patient_referred, cde.contact_document, cde.name1, cde.name2, cde.lastname1, cde.lastname2, cde.relationship, tc.phone, ec.email
                                         FROM contacto_de_emergencia cde, telefono_contacto tc, email_contacto ec
-                                        WHERE cde.patient_document='123'
+                                        WHERE cde.patient_document='${patient_document}'
                                         AND cde.contact_id = tc.contact_id
                                         AND cde.contact_id = ec.contact_id`);
     res.json(response.rows);
@@ -525,7 +540,11 @@ const editEmergencyContact = async(req, res, next)=>{
 
 const getReport = async(req, res, next)=>{
 
-    const response = await pool.query('SELECT * FROM informe');
+    const response = await pool.query(`SELECT DISTINCT i.report_number, i.report_date, i.report_hour, eb.neighborhood_average, ed.age_average, ev.diario, ev.semanal, ev.mensual
+                                        FROM informe i, estadisticas_barrio eb, estadisticas_edad ed, estadisticas_visitas ev
+                                        WHERE i.report_number=eb.report_number
+                                        AND eb.report_number=ed.report_number
+                                        AND ed.report_number=ev.report_number`);
 
     res.json(response.rows);
 
@@ -535,25 +554,19 @@ const getReportByID = async(req, res, next)=>{
 
     const id = req.params.id;
 
-    const response = await pool.query(`SELECT * FROM informe WHERE report_number='${id}`);
+    const response = await pool.query(`SELECT i.report_number, i.report_date, i.report_hour, eb.neighborhood_average, ed.age_average, ev.diario, ev.semanal, ev.mensual
+                                        FROM informe i, estadisticas_barrio eb, estadisticas_edad ed, estadisticas_visitas ev
+                                        WHERE i.report_number='${id}'
+                                        AND eb.report_number='${id}'
+                                        AND ed.report_number='${id}'
+                                        AND ev.report_number='${id}'`);
 
     res.json(response.rows);
 }
 
 const createReport = async(req, res, next)=>{
 
-    var date= new Date();
-    var report_date = (date.getDate()) + '-' + (date.getMonth()+1) + '-' + date.getFullYear();
-
-    var horas= (date.getHours()-5);
-    var minutos= date.getMinutes();
-    var segundos= date.getSeconds();
-    if(horas>12){
-        horas= horas-12;
-    }
-    var report_hour = horas + ':' + minutos + ':' + segundos;
-
-    await pool.query(`INSERT INTO informe (report_date, report_hour) VALUES ($1, $2)`,[report_date, report_hour]);
+    await pool.query(`INSERT INTO informe (report_date, report_hour) VALUES (CURRENT_DATE, LOCALTIME(0))`);
 
     const auxN = await pool.query(`SELECT DISTINCT neighborhood FROM ubicacion_paciente`);
 
@@ -585,10 +598,24 @@ const createReport = async(req, res, next)=>{
 
     await pool.query(`INSERT INTO estadisticas_edad (age_average) VALUES ($1)`,[promedioEdad]);
 
+
+    //LO DIFICIL
+
+
+
     res.send('Informe creado');
 }
 
 const getStock = async(req, res, next)=>{
+
+    const response = await pool.query(`SELECT md.medicine_name, st.quantity, lb.lab_name FROM stock st, medicamento md, laboratorio lb
+    WHERE st.medicine_code=md.medicine_code
+    AND st.rut=lb.rut`);
+
+    res.json(response.rows);
+}
+
+const getStockByLab = async(req, res, next)=>{
 
     const lab_name = req.params.lab_name;
 
@@ -596,8 +623,20 @@ const getStock = async(req, res, next)=>{
                                         WHERE lb.lab_name = '${lab_name}' 
                                         AND st.quantity IN(SELECT quantity FROM stock
                                                         WHERE RUT IN (SELECT RUT FROM laboratorio
-                                                                    WHERE lab_name = '${String(lab_name)}'))
+                                                                    WHERE lab_name = '${lab_name}'))
                                         AND md.medicine_code = st.medicine_code`);
+
+    res.json(response.rows);
+}
+
+const getStockByName = async(req, res, next)=>{
+
+    const medicine_name = req.params.medicine_name;
+
+    const response = await pool.query(`SELECT DISTINCT lb.lab_name, md.medicine_name, st.quantity FROM laboratorio lb, stock st, medicamento md
+                                        WHERE lb.rut = st.rut 
+                                        AND md.medicine_name ='${medicine_name}'
+                                        AND md.medicine_code=st.medicine_code`);
 
     res.json(response.rows);
 }
@@ -607,27 +646,11 @@ const doOrder = async(req, res, next)=>{
     const { medicine_name, lab_name, doctor_document, quantity } = req.body;
 
     const response = await pool.query(`INSERT INTO pedido(medicine_code, RUT, doctor_document, quantity) VALUES((SELECT medicine_code FROM medicamento
-                                                                                                    WHERE medicine_name = '${medicine_name}'),
-                                                                                                    (SELECT RUT FROM laboratorio
-                                                                                                    WHERE lab_name = '${lab_name}'),
-                                                                                                    '${String(doctor_document)}', '${quantity}');`); 
-
-    const actualquantity = await pool.query(`SELECT quantity FROM stock WHERE medicine_code
-                                            IN (SELECT medicine_code FROM medicamento
-                                                WHERE medicine_name = '${medicine_name}')
-                                            AND RUT IN (SELECT RUT FROM laboratorio
-                                                        WHERE lab_name = '${lab_name}')`);
-
-    const operation = actualquantity.rows[0].quantity - quantity;
-
-    const response2 = await pool.query(`UPDATE stock SET quantity = '${operation}'
-                                        WHERE medicine_code
-                                        IN (SELECT medicine_code FROM medicamento
-                                            WHERE medicine_name = '${medicine_name}')
-                                        AND RUT IN (SELECT RUT FROM laboratorio
-                                                    WHERE lab_name = '${lab_name}')  `);
-    
-
+                                         WHERE medicine_name = '${medicine_name}'),
+                                         (SELECT RUT FROM laboratorio
+                                         WHERE lab_name = '${lab_name}'),
+                                         '${String(doctor_document)}', '${quantity}')`);
+     
     res.send('Pedido realizado');
 }
 
@@ -710,4 +733,4 @@ const login = async(req, res, next)=>{
 
 
 
-module.exports= {login, getRegistry, getRegistryByID, createRegistry, getPatient, getPatientByDoctor, getPatientByID, createPatient, editPatient, deletePatient, getRoommates, createRoommates, getDoctor, getDoctorByID, createDoctor, createPublicServer, getEmergencyContactByID, createEmergencyContact, deleteEmergencyContact, editEmergencyContact, getReport, getReportByID, createReport, getStock, doOrder, getOrder};
+module.exports= {login, getRegistry, getRegistryByID, createRegistry, getPatient, getPatientByDoctor, getPatientByID, createPatient, editPatient, deletePatient, getRoommates, createRoommates, deleteRommates, getDoctor, getDoctorByID, createDoctor, createPublicServer, getEmergencyContactByID, createEmergencyContact, deleteEmergencyContact, editEmergencyContact, getReport, getReportByID, createReport, getStock, getStockByLab, getStockByName, doOrder, getOrder};

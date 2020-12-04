@@ -116,8 +116,8 @@ CREATE TABLE ubicacion_paciente(
 CREATE TABLE registro_paciente(
 
     
-	register_date VARCHAR(40) NOT NULL,
-	register_hour VARCHAR(40) NOT NULL,
+	register_date DATE NOT NULL,
+	register_hour TIME NOT NULL,
 	patient_document VARCHAR(40),
 	public_worker_ID SERIAL,
 
@@ -219,8 +219,8 @@ CREATE TABLE registro_doctor(
 
 	doctor_document VARCHAR(40),
 	public_worker_ID SERIAL,
-	register_date VARCHAR(40) NOT NULL,
-	register_hour VARCHAR(40) NOT NULL,
+	register_date DATE NOT NULL,
+	register_hour TIME NOT NULL,
 
 	PRIMARY KEY (doctor_document, public_worker_ID),
 	FOREIGN KEY (doctor_document) REFERENCES doctor(doctor_document),
@@ -273,10 +273,8 @@ CREATE TABLE registro(
     register_number SERIAL,
     patient_document VARCHAR(40),
     doctor_document VARCHAR(40),
-    register_day VARCHAR(40) NOT NULL,
-    register_month VARCHAR(40) NOT NULL,
-    register_year VARCHAR(40) NOT NULL,
-    register_hour VARCHAR(40) NOT NULL,
+    register_date DATE NOT NULL,
+    register_hour TIME NOT NULL,
 
     PRIMARY KEY (register_number),
     FOREIGN KEY (patient_document) REFERENCES paciente(patient_document),
@@ -318,8 +316,8 @@ CREATE TABLE registro_medicamento(
 CREATE TABLE informe(
 	
     report_number SERIAL,
-    report_date VARCHAR(40),
-	report_hour VARCHAR(40),
+    report_date DATE,
+	report_hour TIME,
 
     PRIMARY KEY (report_number)
 );
@@ -396,3 +394,61 @@ INSERT INTO stock(medicine_code, RUT, quantity) VALUES('1', '90076', '100');
 INSERT INTO stock(medicine_code, RUT, quantity) VALUES('2', '90076', '100');
 
 INSERT INTO stock(medicine_code, RUT, quantity) VALUES('3', '90076', '100');
+
+--PROCEDIMIENTO ALMACENADO
+
+CREATE OR REPLACE FUNCTION definir_stock() RETURNS TRIGGER AS $definir_stock$
+  DECLARE
+  BEGIN
+  
+  IF(TG_OP='INSERT')THEN
+  UPDATE stock SET quantity = quantity-NEW.quantity
+  WHERE medicine_code = NEW.medicine_code
+  AND RUT = NEW.RUT;
+  END IF;
+  
+  RETURN NULL;
+  END;
+$definir_stock$ LANGUAGE plpgsql;
+
+--TRIGGER
+
+CREATE TRIGGER define_stock AFTER INSERT
+ON pedido FOR EACH ROW EXECUTE PROCEDURE definir_stock()
+
+
+--PROCEDIMIENTO ALMACENADO DIAS SEMANAS MESES
+
+CREATE OR REPLACE FUNCTION definir_estadisticas() RETURNS TRIGGER AS $definir_estadisticas$
+  DECLARE
+  totalRegistros bigint := COUNT(*)  FROM registro;
+  primerRegistro date := register_date FROM registro WHERE register_number='1';
+  ultimoRegistro date := register_date FROM registro WHERE register_number IN(SELECT MAX(register_number) FROM registro);
+  
+  dias_transcurridos double precision:= DATE_PART('day', ultimoRegistro::timestamp - primerRegistro::timestamp);
+  semanas_transcurridas double precision:= DATE_PART('day', ultimoRegistro::timestamp - primerRegistro::timestamp)/7;
+  meses_transcurridos double precision :=(DATE_PART('year', ultimoRegistro::date) - DATE_PART('year', primerRegistro::date)) * 12 +
+              (DATE_PART('month', ultimoRegistro::date) - DATE_PART('month', primerRegistro::date));
+  
+  BEGIN
+  IF(dias_transcurridos=0)THEN
+  dias_transcurridos:=1;
+  END IF;
+  IF(semanas_transcurridas=0)THEN
+  semanas_transcurridas:=1;
+  END IF;
+  IF(meses_transcurridos=0)THEN
+  meses_transcurridos:=1;
+  END IF;
+  
+  INSERT INTO estadisticas_visitas(diario, semanal, mensual)
+  VALUES(totalRegistros/dias_transcurridos,totalRegistros/semanas_transcurridas, totalRegistros/meses_transcurridos);
+  
+  RETURN NULL;
+  END;
+$definir_estadisticas$ LANGUAGE plpgsql;
+
+--TRIGGER
+
+CREATE TRIGGER definir_estadisticas AFTER INSERT
+ON informe FOR EACH ROW EXECUTE PROCEDURE definir_estadisticas()

@@ -1,0 +1,172 @@
+-------getRegistryByID---------
+{
+"patient_document": "1544823"
+}
+
+-------createRegistry----------
+{
+"patient_document" : "124155",
+ "doctor_document" : "12456243",
+ "patient_weight" : "72",
+ "patient_temperature" : "38",
+ "blood_pressure" : "123",
+ "observations" : "TA FRIO",
+ "medicine_name" : "Choclometanol",
+ "dose" : "23"
+}
+
+----------getPatientByID------------
+{
+"patient_document" : "123"
+}
+
+----------createPatient-----------------
+{
+"type_of_document" : "CC",
+"patient_document" : "124155",
+"name1" : "Rogelio",
+"name2" : "Armando",
+"lastname1" : "Gutierrez",
+"lastname2" : "Pombo",
+"age" : "26", 
+"people_in_the_house" : "6", 
+"public_worker_ID" : "1", 
+"patient_address" : "Calle 5 #3-33", 
+"coordinates" : "28 33 13 466", 
+"possible_infection_city" : "Buga", 
+"doctor_document" : "12456243", 
+"neighborhood" : "Albergue"
+}
+
+----------editPatient-----------------
+{
+"type_of_document" : "CC",
+"patient_document" : "124155",
+"name1" : "Rogelio",
+"name2" : "Augusto",
+"lastname1" : "Guzman",
+"lastname2" : "Potes",
+"age" : "26", 
+"people_in_the_house" : "4", 
+"public_worker_ID" : "1", 
+"patient_address" : "Calle 6 #4-43", 
+"coordinates" : "28 33 13 466", 
+"possible_infection_city" : "Buga", 
+"doctor_document" : "102458792", 
+"neighborhood" : "Albergue"
+}
+
+------------deletePatient----------
+{
+"patient_document" : "123"
+}
+
+------------getRoommates------------
+{
+"patient_document" : "123"
+}
+
+------------createRoommates---------------
+{
+contact_document,
+ "name1" : "Alfredo",
+ "name2" : "",
+ "lastname1" : "Ruiz",
+ "lastname2" : "",
+ "relationship" : "Tio",
+ "patient_document" : "123"
+}
+
+-------------getDoctorByID-------------------
+{
+"doctor_document" : "10459874521"
+}
+
+-------------createDoctor----------------------
+{
+"doctor_document" : "12456243",
+"type_of_document" : "CC",
+"name1" : "Roman",
+"name2" : "Arturo", 
+"lastname1" : "Vidal", 
+"lastname2" : "", 
+"university_name" : "Univalle", 
+"entity_name" : "SALUDTOTAL", 
+"doctor_address" : "Carrera 3 #4-56", 
+"neighborhood" : "Vipasa", 
+"public_worker_ID" : "1",
+"login_password" : "papito33"
+}
+
+---------------createPublicServer------------------
+{
+"public_worker_document" : "1234145", 
+"name1" : "Ricardo", 
+"name2" : "", 
+"lastname1" : "Perez", 
+"lastname2" : "Soto", 
+"position" : "Jefe", 
+"login_password" : "CrazyCarrot"
+}
+
+---------------getEmergencyContacByID-----------------
+{
+"patient_document" : "123"
+}
+
+---------------createEmergencyContact----------------------
+{
+"patient_document" : "123", 
+"contact_document" : "1251512", 
+"name1" : "Andrea", 
+"name2" : "", 
+"lastname1" : "Sabater", 
+"lastname2" : "", 
+"relationship" : "prima", 
+"phone" : "315343672", 
+"email" : "andre_s@gmail.com"
+}
+
+-----------------deleteEmergencyContact---------------
+{
+"patient_document" : "123",
+"contact_document" : "1251512"
+}
+
+-----------------editEmergencyContact-------------------
+{
+
+"patient_document" : "123", 
+"contact_document" : "1251512", 
+"name1" : "Andrea", 
+"name2" : "", 
+"lastname1" : "Sabater", 
+"lastname2" : "Acuña", 
+"relationship" : "sobrina", 
+"phone" : "315343672", 
+"email" : "andre_s@gmail.com"
+}
+
+---------------------getReportByID--------------
+{
+"id" : "1"
+}
+
+-------------------getStock-----------------
+{
+"lab_name" : "Valle Salud"
+}
+
+-------------------doOrder-------------------
+{
+"medicine_name" : "Choclometanol", 
+"lab_name" : "Valle Salud", 
+"doctor_document" : "102458792", 
+"quantity" : "9"
+}
+
+---------------login------------------
+{
+"document" : "1234145",
+"password" : "CrazyCarrot"
+}
