@@ -5,16 +5,13 @@ const { O_DIRECT } = require('constants');
 
 
 const pool= new Pool({
-    host: 'ec2-34-237-247-76.compute-1.amazonaws.com',
-    user: 'lfzzffobtlrpmn',
-    password: 'c25aa39f8b9cec65ed0bf0763079ef86f7cf64554e5c6f1b0b1f7cee602d1a5a',
-    database: 'demsc78c77ntbr', 
-    port: '5432'
-    // host: 'localhost',
-    // user: 'postgres',
-    // password: 'petronia2207',
-    // database: 'postgres', 
-    // port: '5432'
+
+    host: process.env.HOST,
+    user: process.env.USER,
+    password: process.env.PASSWORD,
+    database: process.env.DATABASE, 
+    port: process.env.DBPORT
+
 })
 
 const getRegistry = async(req, res, next)=>{
